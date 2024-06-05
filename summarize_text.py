@@ -1,12 +1,12 @@
 # This file is for summarizing the text file and save the result to the excel file
-
+# But we don't need to use this file (directly use the audio file to summarize)
 import openai
 import pandas as pd
 
 # <-----------------------------------------------------------------------> #
 # OpenAI API key setup
 # TODO:: Sehyoun: I recommand to use the system environment variable for the API key
-openai.api_key = 'sk-proj-CBplk47U0WaA6gHBSp1kT3BlbkFJZNzTrSBU0biUEusiHu05'
+openai.api_key = 'sk-proj-OuXA8njLyg4QHK9ew1eDT3BlbkFJUqXbcSFBnGUsB4XMKC74'
 # <-----------------------------------------------------------------------> #
 
 
