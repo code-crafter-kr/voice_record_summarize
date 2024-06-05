@@ -1,3 +1,5 @@
+# This file is for summarizing the text file and save the result to the excel file
+
 import openai
 import pandas as pd
 
@@ -12,10 +14,10 @@ openai.api_key = 'sk-proj-UX4IIXjEyFDbzwZskH0sT3BlbkFJOVeVH4DfkQWjo7qgXsBW'
 # Read text file
 with open('test.txt', 'r', encoding='utf-8') as file:
     text_content = file.read()
-    
+
 # Text parsing and summarization
 response = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo",
+    model="gpt-4o",
     messages=[
         {"role": "system", "content": "You are a helpful assistant that extracts and summarizes information."},
         {"role": "user", "content": f"다음 텍스트에서 날짜, 전화번호, 내용을 추출하고 follow up task를 생성해 주세요:\n\n{text_content}\n\n포맷은 다음과 같습니다:\n\n날짜: [추출된 날짜]\n전화번호: [추출된 전화번호]\n내용: [추출된 내용]\nFollow up task: [생성된 follow up task]"}
@@ -47,8 +49,10 @@ df = pd.DataFrame(data)
 
 # <-----------------------------------------------------------------------> #
 # excel file update
-output_file = 'summarize.xlsx'
+output_file = 'test.xlsx'
 df.to_excel(output_file, index=False)
 
-print(f"요약 결과가 '{output_file}' 파일에 저장되었습니다.")
+# save the file
+
+print(f"'{output_file}' has been saved")
 # <-----------------------------------------------------------------------> #
