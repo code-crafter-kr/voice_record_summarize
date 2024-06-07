@@ -1,6 +1,8 @@
 import openai
 import pandas as pd
 import sys
+import subprocess
+import os
 
 # <-----------------------------------------------------------------------> #
 # Function to split the text into the required parts
@@ -25,7 +27,6 @@ def split_text(text):
 
     return date, phone, content, follow_up
 # <-----------------------------------------------------------------------> #
-
 
 # <-----------------------------------------------------------------------> #
 # OpenAI API key setup
@@ -53,7 +54,8 @@ def process_audio_file(audio_file_path):
         model="gpt-4o",
         messages=[
             {"role": "system", "content": "You are a helpful assistant that extracts and summarizes information."},
-            {"role": "user", "content": f"다음 텍스트에서 전화를 한 날짜와 시간, 전화번호, 내용을 추출하고 follow up task를 생성해 주세요:\n\n{text_content}\n\n포맷은 다음과 같습니다:\n\n시간: [추출된 시간]\n전화번호: [추출된 전화번호]\n내용: [추출된 내용]\nFollow up task: [생성된 follow up task]"}
+            {"role": "user", "content": f"다음 텍스트에서 전화를 한 날짜와 시간, 전화번호, 내용을 추출하고 follow up task를 생성해 주세요:\n\n{text_content}\n\n포맷은 다음과 같습니다:\n\n시간: [ex) 6/5/2024 17:33]\n전화번호: [ex) 010-3578-9915]\n내용: [추출된 내용]\nFollow up task: [생성된 follow up task]"},
+            {"role": "user", "content": "특히 일정에 관한 내용이라면 해당 날짜를 추출해 주세요."}
         ]
     )
     parsed_response = response['choices'][0]['message']['content'].strip()
@@ -74,11 +76,20 @@ def process_audio_file(audio_file_path):
     # <-----------------------------------------------------------------------> #
 
     # <-----------------------------------------------------------------------> #
-    # excel file update
-    output_file = 'test.xlsx'
-    df.to_excel(output_file, index=False)
+    # Save DataFrame to a temporary file
+    temp_file = 'temp.xlsx'
+    df.to_excel(temp_file, index=False)
 
-    print(f"'{output_file}' has been saved")
+    # Execute file_save.py with the temporary file as argument
+    try:
+        subprocess.run(["python", "file_save.py", temp_file], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error during processing: {e.stderr}")
+
+    # Remove the temporary file
+    os.remove(temp_file)
+
+    print(f"'{temp_file}' has been processed and deleted")
     # <-----------------------------------------------------------------------> #
 
 # <-----------------------------------------------------------------------> #
