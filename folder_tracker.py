@@ -1,5 +1,6 @@
 import time
 import os
+import subprocess
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import tkinter as tk
@@ -18,7 +19,7 @@ class Watcher:
         try:
             while True:
                 time.sleep(5)
-        except:
+        except KeyboardInterrupt:
             self.observer.stop()
             print("Observer Stopped")
 
@@ -32,6 +33,15 @@ class Handler(FileSystemEventHandler):
             return None
         elif event.src_path.endswith(".mp3"):
             print(f"find! - {event.src_path}")
+            Handler.process_file(event.src_path)
+
+    @staticmethod
+    def process_file(file_path):
+        try:
+            result = subprocess.run(["python", "summarize_audio.py", file_path], check=True, capture_output=True, text=True)
+            print(f"Processing output: {result.stdout}")
+        except subprocess.CalledProcessError as e:
+            print(f"Error during processing: {e.stderr}")
 
 def select_directory():
     root = tk.Tk()

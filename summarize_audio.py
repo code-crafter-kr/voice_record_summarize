@@ -1,5 +1,6 @@
 import openai
 import pandas as pd
+import sys
 
 # <-----------------------------------------------------------------------> #
 # Function to split the text into the required parts
@@ -28,63 +29,64 @@ def split_text(text):
 
 # <-----------------------------------------------------------------------> #
 # OpenAI API key setup
-# TODO:: Sehyoun: I recommand to use the system environment variable for the API key
+# TODO:: Sehyoun: I recommend using the system environment variable for the API key
 openai.api_key = 'sk-proj-OuXA8njLyg4QHK9ew1eDT3BlbkFJUqXbcSFBnGUsB4XMKC74'
 # <-----------------------------------------------------------------------> #
 
 # <-----------------------------------------------------------------------> #
-# Read audio file and convert to text using OpenAI's Whisper
-audio_file_path = '01055269662-07088311642 20240517154539-0.mp3'
+def process_audio_file(audio_file_path):
+    # Read audio file and convert to text using OpenAI's Whisper
+    with open(audio_file_path, 'rb') as audio_file:
+        transcription = openai.Audio.transcribe("whisper-1", audio_file)
+        text_content = transcription['text']
 
+    text_content = audio_file_path.split('-')[0] + '\n' + text_content # 전화번호 정보
+    text_content = audio_file_path.split(' ')[1] + '\n' + text_content # 시간정보
 
-# Convert audio to text
-with open(audio_file_path, 'rb') as audio_file:
-    transcription = openai.Audio.transcribe("whisper-1", audio_file)
-    text_content = transcription['text']
+    # Print the transcribed text for debugging
+    print("Transcribed Text:\n", text_content)
+    # <-----------------------------------------------------------------------> #
 
-text_content = audio_file_path.split('-')[0] + '\n' + text_content # 전화번호 정보
-text_content = audio_file_path.split(' ')[1] + '\n' + text_content # 시간정보
+    # <-----------------------------------------------------------------------> #
+    # Text parsing and summarization (GPT model)
+    response = openai.ChatCompletion.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant that extracts and summarizes information."},
+            {"role": "user", "content": f"다음 텍스트에서 전화를 한 날짜와 시간, 전화번호, 내용을 추출하고 follow up task를 생성해 주세요:\n\n{text_content}\n\n포맷은 다음과 같습니다:\n\n시간: [추출된 시간]\n전화번호: [추출된 전화번호]\n내용: [추출된 내용]\nFollow up task: [생성된 follow up task]"}
+        ]
+    )
+    parsed_response = response['choices'][0]['message']['content'].strip()
+    # <-----------------------------------------------------------------------> #
 
-# Print the transcribed text for debugging
-print("Transcribed Text:\n", text_content)
+    # <-----------------------------------------------------------------------> #
+    # result to DataFrame processing
+    date, phone, content, follow_up = split_text(parsed_response)
+
+    print(date + '\n' + phone + '\n' + content + '\n' + follow_up)
+    data = {
+        '시간(날짜)': [date],
+        '번호': [phone],
+        '내용': [content],
+        'Follow up task': [follow_up]
+    }
+    df = pd.DataFrame(data)
+    # <-----------------------------------------------------------------------> #
+
+    # <-----------------------------------------------------------------------> #
+    # excel file update
+    output_file = 'test.xlsx'
+    df.to_excel(output_file, index=False)
+
+    print(f"'{output_file}' has been saved")
+    # <-----------------------------------------------------------------------> #
+
 # <-----------------------------------------------------------------------> #
+if __name__ == '__main__':
+    if len(sys.argv) != 2:
+        print("Usage: python summarize_audio.py <audio_file_path>")
+        sys.exit(1)
 
+    audio_file_path = sys.argv[1]
+    process_audio_file(audio_file_path)
 # <-----------------------------------------------------------------------> #
-# Text parsing and summarization (GPT model)
-response = openai.ChatCompletion.create(
-    model="gpt-4o",
-    messages=[
-        {"role": "system", "content": "You are a helpful assistant that extracts and summarizes information."},
-        {"role": "user", "content": f"다음 텍스트에서 전화를 한 날짜와 시간, 전화번호, 내용을 추출하고 follow up task를 생성해 주세요:\n\n{text_content}\n\n포맷은 다음과 같습니다:\n\n시간: [추출된 시간]\n전화번호: [추출된 전화번호]\n내용: [추출된 내용]\nFollow up task: [생성된 follow up task]"}
-    ]
-)
-print("debugging")
-parsed_response = response['choices'][0]['message']['content'].strip()
-# <-----------------------------------------------------------------------> #
-
-
-# <-----------------------------------------------------------------------> #
-# result to DataFrame processing
-date, phone, content, follow_up = split_text(parsed_response)
-
-
-print("TEST")
-print( date + '\n' + phone + '\n' + content + '\n' + follow_up)
-data = {
-    '시간(날짜)': [date],
-    '번호': [phone],
-    '내용': [content],
-    'Follow up task': [follow_up]
-}
-df = pd.DataFrame(data)
-# <-----------------------------------------------------------------------> #
-
-# <-----------------------------------------------------------------------> #
-# excel file update
-output_file = 'test.xlsx'
-df.to_excel(output_file, index=False)
-
-print(f"'{output_file}' has been saved")
-# <-----------------------------------------------------------------------> #
-
-
